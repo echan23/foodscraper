@@ -1,6 +1,6 @@
 import json
 import os
-import mysql.connector
+import psycopg2
 import logging
 from dotenv import load_dotenv
 load_dotenv()
@@ -57,11 +57,11 @@ def lambda_handler(event, context):
 
     #Worked when hardcoding env, there is some conflict between .env and the lambda env from serverless.yml 
     try:
-        conn = mysql.connector.connect(
+        conn = psycopg2.connect(
             host=os.environ["DB_HOST"],
             user=os.environ["DB_USER"],
             password=os.environ["DB_PASS"],
-            database=os.environ["DB_NAME"],
+            dbname=os.environ["DB_NAME"],
         )
         cursor = conn.cursor()
 

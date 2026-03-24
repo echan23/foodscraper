@@ -1,15 +1,15 @@
-import mysql.connector
+import psycopg2
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
 try:
-    conn = mysql.connector.connect(
+    conn = psycopg2.connect(
         host=os.environ["RDS_ENDPOINT"],
         user=os.environ["DB_USER_RDS"],
         password=os.environ["DB_PASSWORD"],
-        database=os.environ["DB_NAME"],
+        dbname=os.environ["DB_NAME"],
     )
     print("Connected to the database")
 
@@ -47,22 +47,21 @@ try:
     query = """
     INSERT INTO food_items (name, calories, protein, total_fat, carbs, sodium, sugar, serving_size, location)
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-    ON DUPLICATE KEY UPDATE
-        calories = VALUES(calories),
-        protein = VALUES(protein),
-        total_fat = VALUES(total_fat),
-        carbs = VALUES(carbs),
-        sodium = VALUES(sodium),
-        sugar = VALUES(sugar),
-        serving_size = VALUES(serving_size),
-        location = VALUES(location);
+    ON CONFLICT (name, location) DO UPDATE SET
+        calories = EXCLUDED.calories,
+        protein = EXCLUDED.protein,
+        total_fat = EXCLUDED.total_fat,
+        carbs = EXCLUDED.carbs,
+        sodium = EXCLUDED.sodium,
+        sugar = EXCLUDED.sugar,
+        serving_size = EXCLUDED.serving_size;
     """
 
     cursor.executemany(query, test_data)
     conn.commit()
     print("Test data inserted successfully")
 
-except mysql.connector.Error as err:
+except psycopg2.Error as err:
     print("Database error:", err)
 
 except Exception as e:

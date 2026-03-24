@@ -33,15 +33,14 @@ def insert_bulk_food_data(cursor, connection, items_data):
         query = '''
             INSERT INTO food_items (name, calories, protein, total_fat, carbs, sodium, sugar, serving_size, location)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON DUPLICATE KEY UPDATE
-                calories = VALUES(calories),
-                protein = VALUES(protein),
-                total_fat = VALUES(total_fat),
-                carbs = VALUES(carbs),
-                sodium = VALUES(sodium),
-                sugar = VALUES(sugar),
-                serving_size = VALUES(serving_size),
-                location = VALUES(location)
+            ON CONFLICT (name, location) DO UPDATE SET
+                calories = EXCLUDED.calories,
+                protein = EXCLUDED.protein,
+                total_fat = EXCLUDED.total_fat,
+                carbs = EXCLUDED.carbs,
+                sodium = EXCLUDED.sodium,
+                sugar = EXCLUDED.sugar,
+                serving_size = EXCLUDED.serving_size
         '''
         data_to_insert = [
             (

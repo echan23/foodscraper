@@ -2,7 +2,7 @@ import os
 import re
 import json
 import requests
-import mysql.connector
+import psycopg2
 from datetime import datetime
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
@@ -71,15 +71,14 @@ def insert_data(connection, items_data):
     query = '''
         INSERT INTO food_items (name, calories, protein, total_fat, carbs, sodium, sugar, serving_size, location)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        ON DUPLICATE KEY UPDATE
-            calories = VALUES(calories),
-            protein = VALUES(protein),
-            total_fat = VALUES(total_fat),
-            carbs = VALUES(carbs),
-            sodium = VALUES(sodium),
-            sugar = VALUES(sugar),
-            serving_size = VALUES(serving_size),
-            location = VALUES(location)
+        ON CONFLICT (name, location) DO UPDATE SET
+            calories = EXCLUDED.calories,
+            protein = EXCLUDED.protein,
+            total_fat = EXCLUDED.total_fat,
+            carbs = EXCLUDED.carbs,
+            sodium = EXCLUDED.sodium,
+            sugar = EXCLUDED.sugar,
+            serving_size = EXCLUDED.serving_size
     '''
     data = [(item['name'], item['calories'], item['protein'], item['total_fat'], item['carbs'],
              item['sodium'], item['sugar'], item['serving_size'], item['location']) for item in items_data]
@@ -115,11 +114,11 @@ def fetch_item(session, item, location):
 
 
 def lambda_handler(event, context):
-    conn = mysql.connector.connect(
+    conn = psycopg2.connect(
         host=os.environ["DB_HOST"],
         user=os.environ["DB_USER"],
         password=os.environ["DB_PASS"],
-        database=os.environ["DB_NAME"],
+        dbname=os.environ["DB_NAME"],
     )
 
     truncate_table(conn)
@@ -150,7 +149,6 @@ def lambda_handler(event, context):
     conn.close()
     return {"statusCode": 200, "body": json.dumps("Scraping completed")}
 
-"""
+
 if __name__ == "__main__":
     lambda_handler(None, None)
-"""
